@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Career Diagnostic — Find Your Hidden Bottleneck</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0B0E17;
+    --bg-card: rgba(255,255,255,0.035);
+    --bg-card-hover: rgba(255,255,255,0.07);
+    --border: rgba(255,255,255,0.08);
+    --border-hover: rgba(255,255,255,0.18);
+    --gold: #D4A03C;
+    --gold-glow: rgba(212,160,60,0.25);
+    --blue: #4A90D9;
+    --green: #4CAF50;
+    --purple: #9B6DD7;
+    --coral: #E2654A;
+    --teal: #1ABC9C;
+    --text: #E8E6E3;
+    --text-dim: #7A7680;
+    --text-mid: #A8A4B0;
+    --radius: 14px;
+    --transition: 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .screen {
+    display: none;
+    min-height: 100vh;
+    padding: 40px 20px;
+    animation: fadeIn 0.5s ease;
+  }
+  .screen.active { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes fadeInUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.03); } }
+  @keyframes drawIn { from { stroke-dashoffset: 1200; } to { stroke-dashoffset: 0; } }
+  @keyframes fillIn { from { opacity: 0; } to { opacity: 1; } }
+
+  /* ── Intro Screen ── */
+  .intro-wrap { max-width: 580px; text-align: center; }
+  .intro-wrap .badge {
+    display: inline-block;
+    padding: 6px 16px;
+    border-radius: 100px;
+    background: rgba(212,160,60,0.1);
+    border: 1px solid rgba(212,160,60,0.25);
+    color: var(--gold);
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 28px;
+  }
+  .intro-wrap h1 {
+    font-size: clamp(2rem, 5vw, 3rem);
+    font-weight: 700;
+    line-height: 1.15;
+    margin-bottom: 18px;
+    background: linear-gradient(135deg, #fff 0%, var(--text-mid) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .intro-wrap .subtitle {
+    font-size: 1.1rem;
+    color: var(--text-mid);
+    line-height: 1.65;
+    margin-bottom: 40px;
+  }
+  .intro-wrap .dims {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 44px;
+  }
+  .intro-wrap .dim-chip {
+    padding: 10px 8px;
+    border-radius: 10px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    font-size: 0.78rem;
+    color: var(--text-mid);
+  }
+  .btn-start {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 40px;
+    border-radius: 100px;
+    background: linear-gradient(135deg, var(--gold), #C4902C);
+    color: #0B0E17;
+    font-size: 1rem;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 4px 24px var(--gold-glow);
+  }
+  .btn-start:hover { transform: translateY(-2px); box-shadow: 0 8px 32px var(--gold-glow); }
+  .btn-start:active { transform: translateY(0); }
+  .btn-start svg { width: 18px; height: 18px; }
+
+  /* ── Quiz Screen ── */
+  .quiz-wrap { max-width: 640px; width: 100%; }
+  .progress-bar-track {
+    width: 100%;
+    height: 4px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 4px;
+    margin-bottom: 12px;
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--gold), #E8B84A);
+    border-radius: 4px;
+    transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .quiz-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 48px;
+  }
+  .quiz-counter { font-size: 0.85rem; color: var(--text-dim); font-variant-numeric: tabular-nums; }
+  .btn-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: var(--transition);
+  }
+  .btn-back:hover { border-color: var(--border-hover); color: var(--text-mid); }
+  .btn-back.hidden { opacity: 0; pointer-events: none; }
+
+  .question-container {
+    min-height: 420px;
+    position: relative;
+  }
+  .question-slide {
+    animation: fadeIn 0.35s ease;
+  }
+  .question-text {
+    font-size: clamp(1.15rem, 3vw, 1.35rem);
+    font-weight: 600;
+    line-height: 1.5;
+    margin-bottom: 32px;
+    color: #fff;
+  }
+  .options { display: flex; flex-direction: column; gap: 12px; }
+  .option-btn {
+    width: 100%;
+    text-align: left;
+    padding: 18px 22px;
+    border-radius: var(--radius);
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-size: 0.95rem;
+    line-height: 1.5;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .option-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, var(--gold-glow), transparent);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .option-btn:hover {
+    border-color: var(--border-hover);
+    background: var(--bg-card-hover);
+    transform: translateX(4px);
+  }
+  .option-btn:hover::before { opacity: 1; }
+  .option-btn.selected {
+    border-color: var(--gold);
+    background: rgba(212,160,60,0.08);
+    animation: pulse 0.4s ease;
+  }
+  .option-btn.selected::before { opacity: 1; }
+
+  /* ── Results Screen ── */
+  .results-wrap { max-width: 720px; width: 100%; }
+
+  .results-header {
+    text-align: center;
+    margin-bottom: 48px;
+    animation: fadeInUp 0.6s ease;
+  }
+  .results-header .badge {
+    display: inline-block;
+    padding: 6px 16px;
+    border-radius: 100px;
+    background: rgba(212,160,60,0.1);
+    border: 1px solid rgba(212,160,60,0.25);
+    color: var(--gold);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+  .results-header h2 {
+    font-size: clamp(1.6rem, 4vw, 2.2rem);
+    font-weight: 700;
+    margin-bottom: 10px;
+  }
+  .overall-score {
+    font-size: 0.95rem;
+    color: var(--text-mid);
+  }
+  .overall-score strong {
+    color: var(--gold);
+    font-size: 1.1rem;
+  }
+
+  .chart-section {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 48px;
+    animation: fadeInUp 0.6s ease 0.1s both;
+  }
+  .radar-chart { max-width: 400px; width: 100%; }
+
+  .scores-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    margin-bottom: 48px;
+    animation: fadeInUp 0.6s ease 0.2s both;
+  }
+  .score-card {
+    padding: 18px 20px;
+    border-radius: var(--radius);
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+  }
+  .score-card .label {
+    font-size: 0.78rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .score-card .label .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .score-card .bar-track {
+    width: 100%;
+    height: 6px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 6px;
+    margin-bottom: 6px;
+    overflow: hidden;
+  }
+  .score-card .bar-fill {
+    height: 100%;
+    border-radius: 6px;
+    transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+    width: 0;
+  }
+  .score-card .pct { font-size: 0.85rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+  .bottleneck-card {
+    padding: 36px 32px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, rgba(226,101,74,0.06), rgba(226,101,74,0.02));
+    border: 1px solid rgba(226,101,74,0.2);
+    margin-bottom: 28px;
+    animation: fadeInUp 0.6s ease 0.35s both;
+  }
+  .bottleneck-card .overline {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--coral);
+    margin-bottom: 12px;
+  }
+  .bottleneck-card h3 {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin-bottom: 16px;
+    color: #fff;
+  }
+  .bottleneck-card p {
+    font-size: 0.95rem;
+    line-height: 1.75;
+    color: var(--text-mid);
+    margin-bottom: 12px;
+  }
+  .bottleneck-card p:last-child { margin-bottom: 0; }
+
+  .compound-card {
+    padding: 28px 28px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, rgba(155,109,215,0.06), rgba(155,109,215,0.02));
+    border: 1px solid rgba(155,109,215,0.2);
+    margin-bottom: 28px;
+    animation: fadeInUp 0.6s ease 0.45s both;
+  }
+  .compound-card .overline {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--purple);
+    margin-bottom: 12px;
+  }
+  .compound-card h3 { font-size: 1.15rem; font-weight: 700; margin-bottom: 12px; color: #fff; }
+  .compound-card p { font-size: 0.92rem; line-height: 1.7; color: var(--text-mid); }
+
+  .strength-card {
+    padding: 28px 28px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, rgba(76,175,80,0.06), rgba(76,175,80,0.02));
+    border: 1px solid rgba(76,175,80,0.2);
+    margin-bottom: 28px;
+    animation: fadeInUp 0.6s ease 0.4s both;
+  }
+  .strength-card .overline {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--green);
+    margin-bottom: 12px;
+  }
+  .strength-card h3 { font-size: 1.15rem; font-weight: 700; margin-bottom: 12px; color: #fff; }
+  .strength-card p { font-size: 0.92rem; line-height: 1.7; color: var(--text-mid); }
+
+  .actions-card {
+    padding: 32px 28px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, rgba(212,160,60,0.06), rgba(212,160,60,0.02));
+    border: 1px solid rgba(212,160,60,0.2);
+    margin-bottom: 40px;
+    animation: fadeInUp 0.6s ease 0.55s both;
+  }
+  .actions-card .overline {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 16px;
+  }
+  .actions-card h3 { font-size: 1.15rem; font-weight: 700; margin-bottom: 20px; color: #fff; }
+  .actions-list { list-style: none; display: flex; flex-direction: column; gap: 14px; }
+  .actions-list li {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    font-size: 0.92rem;
+    line-height: 1.6;
+    color: var(--text-mid);
+  }
+  .actions-list .num {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(212,160,60,0.12);
+    color: var(--gold);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.78rem;
+    font-weight: 700;
+  }
+
+  .btn-restart {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 32px;
+    border-radius: 100px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-mid);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    animation: fadeInUp 0.6s ease 0.65s both;
+  }
+  .btn-restart:hover { border-color: var(--border-hover); color: var(--text); }
+
+  .results-footer {
+    text-align: center;
+    padding-top: 20px;
+    animation: fadeInUp 0.6s ease 0.65s both;
+  }
+
+  @media (max-width: 600px) {
+    .screen { padding: 28px 16px; }
+    .intro-wrap .dims { grid-template-columns: repeat(2, 1fr); }
+    .quiz-header { margin-bottom: 32px; }
+    .question-text { font-size: 1.1rem; }
+    .option-btn { padding: 15px 18px; font-size: 0.9rem; }
+    .scores-grid { grid-template-columns: 1fr; }
+    .bottleneck-card, .compound-card, .strength-card, .actions-card { padding: 24px 20px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── INTRO ── -->
+<div id="intro" class="screen active">
+  <div class="intro-wrap">
+    <div class="badge">30 questions &middot; 5 minutes</div>
+    <h1>Find the Hidden Bottleneck in Your Career</h1>
+    <p class="subtitle">
+      Most career advice treats symptoms. This diagnostic pinpoints the root constraint
+      &mdash; the one area where a shift would unlock everything else. Answer honestly, not aspirationally.
+    </p>
+    <div class="dims">
+      <div class="dim-chip">Clarity &amp; Direction</div>
+      <div class="dim-chip">Market Positioning</div>
+      <div class="dim-chip">Execution &amp; Momentum</div>
+      <div class="dim-chip">Network &amp; Advocates</div>
+      <div class="dim-chip">Mental Resilience</div>
+      <div class="dim-chip">Growth &amp; Adaptability</div>
+    </div>
+    <button class="btn-start" onclick="startQuiz()">
+      Begin Diagnostic
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </button>
+  </div>
+</div>
+
+<!-- ── QUIZ ── -->
+<div id="quiz" class="screen">
+  <div class="quiz-wrap">
+    <div class="progress-bar-track"><div class="progress-bar-fill" id="progressFill"></div></div>
+    <div class="quiz-header">
+      <button class="btn-back hidden" id="backBtn" onclick="prevQuestion()">&#8592; Back</button>
+      <div class="quiz-counter" id="counter">1 / 30</div>
+    </div>
+    <div class="question-container" id="questionContainer"></div>
+  </div>
+</div>
+
+<!-- ── RESULTS ── -->
+<div id="results" class="screen">
+  <div class="results-wrap" id="resultsContent"></div>
+</div>
+
+<script>
+// ── QUESTION DATA ──
+const DIMS = ['clarity','market','execution','network','innerGame','growth'];
+const DIM_META = {
+  clarity:   { name: 'Clarity & Direction',      color: '#D4A03C', short: 'Clarity' },
+  market:    { name: 'Market Value & Positioning', color: '#4A90D9', short: 'Market' },
+  execution: { name: 'Execution & Momentum',      color: '#4CAF50', short: 'Execution' },
+  network:   { name: 'Relationships & Network',   color: '#9B6DD7', short: 'Network' },
+  innerGame: { name: 'Inner Game & Resilience',   color: '#E2654A', short: 'Resilience' },
+  growth:    { name: 'Growth & Adaptability',     color: '#1ABC9C', short: 'Growth' },
+};
+
+const QUESTIONS = [
+  // ── Round 1 ──
+  { dim:'clarity', text:'When someone asks "Where do you see yourself in 3 years?" you\u2026', opts:[
+    {t:'Feel a spike of anxiety \u2014 you genuinely have no idea',s:1},
+    {t:'Recite a polished answer you don\u2019t actually believe',s:2},
+    {t:'Have a rough direction but the details are fuzzy',s:3},
+    {t:'Can describe a vivid, specific vision that excites you',s:4}
+  ]},
+  { dim:'market', text:'If you were laid off tomorrow, how confident are you in landing an equivalent or better role?', opts:[
+    {t:'It could take 6+ months and you\u2019d likely settle for less',s:1},
+    {t:'3\u20136 months with significant effort and stress',s:2},
+    {t:'1\u20133 months \u2014 you have options you could pursue',s:3},
+    {t:'Weeks \u2014 recruiters already contact you regularly',s:4}
+  ]},
+  { dim:'execution', text:'Think of a career goal you had 12 months ago. What happened with it?', opts:[
+    {t:'You didn\u2019t set any clear goals',s:1},
+    {t:'You set something but made virtually no progress',s:2},
+    {t:'You made some progress but lost steam',s:3},
+    {t:'You achieved it or are meaningfully on track',s:4}
+  ]},
+  { dim:'network', text:'If you needed three people to enthusiastically vouch for your abilities to a hiring manager tomorrow, it would be\u2026', opts:[
+    {t:'Very difficult \u2014 you lack strong professional advocates',s:1},
+    {t:'Possible but they wouldn\u2019t be particularly enthusiastic',s:2},
+    {t:'Manageable \u2014 you have a few reliable champions',s:3},
+    {t:'Easy \u2014 multiple people would eagerly advocate for you',s:4}
+  ]},
+  { dim:'innerGame', text:'On a typical Sunday evening, your feeling about the upcoming work week is best described as\u2026', opts:[
+    {t:'Dread or significant anxiety',s:1},
+    {t:'Resigned acceptance \u2014 "here we go again"',s:2},
+    {t:'Neutral \u2014 it\u2019s neither exciting nor dreaded',s:3},
+    {t:'Genuine anticipation for at least some part of the week',s:4}
+  ]},
+  { dim:'growth', text:'How has your professional skillset fundamentally changed in the last two years?', opts:[
+    {t:'It hasn\u2019t \u2014 you\u2019re doing the same work the same way',s:1},
+    {t:'Minor tweaks forced by circumstances',s:2},
+    {t:'Some deliberate development, mostly in comfortable areas',s:3},
+    {t:'Significant growth including ventures into uncomfortable territory',s:4}
+  ]},
+  // ── Round 2 ──
+  { dim:'clarity', text:'Your current career path was chosen primarily because\u2026', opts:[
+    {t:'It was available and you needed income',s:1},
+    {t:'It seemed like the logical next step at the time',s:2},
+    {t:'It aligned with some of your interests',s:3},
+    {t:'It was a deliberate step toward a larger vision you hold',s:4}
+  ]},
+  { dim:'market', text:'If someone Googled your name and profession, they would find\u2026', opts:[
+    {t:'Nothing meaningful',s:1},
+    {t:'A basic LinkedIn profile, possibly outdated',s:2},
+    {t:'A reasonable profile with some professional presence',s:3},
+    {t:'A body of work, contributions, or recognition in your field',s:4}
+  ]},
+  { dim:'execution', text:'When you identify a skill gap that\u2019s holding you back, what typically happens?', opts:[
+    {t:'Nothing \u2014 you acknowledge it and move on',s:1},
+    {t:'You buy a course or book that collects digital dust',s:2},
+    {t:'You make some effort but don\u2019t see it through',s:3},
+    {t:'You create a focused plan and execute it systematically',s:4}
+  ]},
+  { dim:'network', text:'When was the last time you had a substantive career conversation with someone outside your current company?', opts:[
+    {t:'Can\u2019t remember \u2014 over a year ago',s:1},
+    {t:'Several months ago',s:2},
+    {t:'Within the last month',s:3},
+    {t:'Within the last week or two',s:4}
+  ]},
+  { dim:'innerGame', text:'When you experience professional rejection (passed over, turned down, idea dismissed), your typical response is\u2026', opts:[
+    {t:'Devastation \u2014 you ruminate for days or weeks',s:1},
+    {t:'Significant self-doubt that lingers',s:2},
+    {t:'Brief disappointment, then recalibration',s:3},
+    {t:'Quick extraction of the lesson, then forward motion',s:4}
+  ]},
+  { dim:'growth', text:'When your industry undergoes a major shift (new technology, methodology, market change), you typically\u2026', opts:[
+    {t:'Feel threatened and resist \u2014 the old way worked fine',s:1},
+    {t:'Wait and see \u2014 you\u2019ll adapt when forced',s:2},
+    {t:'Catch up reactively once the shift is undeniable',s:3},
+    {t:'Get curious early and start experimenting proactively',s:4}
+  ]},
+  // ── Round 3 ──
+  { dim:'clarity', text:'If you received a 40% raise tomorrow to stay in your exact current role permanently, you would\u2026', opts:[
+    {t:'Accept immediately without hesitation',s:1},
+    {t:'Seriously consider it \u2014 that\u2019s hard to turn down',s:2},
+    {t:'Feel conflicted but probably decline',s:3},
+    {t:'Decline \u2014 compensation isn\u2019t what\u2019s missing',s:4}
+  ]},
+  { dim:'market', text:'When was the last time you researched what your skills are actually worth in the current market?', opts:[
+    {t:'Never \u2014 you have no idea what the market rate is',s:1},
+    {t:'Over a year ago',s:2},
+    {t:'Within the last six months',s:3},
+    {t:'You continuously monitor comp data and market trends',s:4}
+  ]},
+  { dim:'execution', text:'How many deliberate career-advancing actions have you taken in the last 30 days?', opts:[
+    {t:'None',s:1},
+    {t:'One \u2014 maybe a conversation or an updated resume',s:2},
+    {t:'A few \u2014 you\u2019re making gradual moves',s:3},
+    {t:'Multiple \u2014 you\u2019re actively building toward something specific',s:4}
+  ]},
+  { dim:'network', text:'Your relationship with the people who influence your career trajectory (managers, stakeholders, leaders) is best described as\u2026', opts:[
+    {t:'Distant, adversarial, or non-existent',s:1},
+    {t:'Purely transactional \u2014 they assign, you deliver',s:2},
+    {t:'Positive but you\u2019re not top-of-mind for opportunities',s:3},
+    {t:'Strong \u2014 they actively champion your growth and visibility',s:4}
+  ]},
+  { dim:'innerGame', text:'How often do you compare your career progress to peers your age or in your cohort?', opts:[
+    {t:'Constantly \u2014 it\u2019s a persistent source of stress',s:1},
+    {t:'Frequently \u2014 comparison drives many of your feelings about work',s:2},
+    {t:'Sometimes \u2014 but you can usually redirect your focus',s:3},
+    {t:'Rarely \u2014 you measure progress against your own benchmarks',s:4}
+  ]},
+  { dim:'growth', text:'Your approach to professional learning is best described as\u2026', opts:[
+    {t:'Non-existent \u2014 you rely entirely on what you already know',s:1},
+    {t:'Sporadic \u2014 triggered by panic or requirement',s:2},
+    {t:'Moderate \u2014 you consume content but rarely apply it deeply',s:3},
+    {t:'Systematic \u2014 you have ongoing habits for learning and application',s:4}
+  ]},
+  // ── Round 4 ──
+  { dim:'clarity', text:'When scrolling LinkedIn and seeing peers announce promotions or new roles, you typically feel\u2026', opts:[
+    {t:'Lost \u2014 you don\u2019t even know what title you\u2019d want next',s:1},
+    {t:'A vague envy but you\u2019re unsure what you\u2019d change',s:2},
+    {t:'Motivated, though your own path is still forming',s:3},
+    {t:'Unbothered \u2014 you\u2019re on your own intentional trajectory',s:4}
+  ]},
+  { dim:'market', text:'Could a stranger understand what makes you uniquely valuable from your online presence in under 10 seconds?', opts:[
+    {t:'Your profiles are outdated, empty, or generic',s:1},
+    {t:'They list experience but nothing stands out',s:2},
+    {t:'They\u2019re decent but don\u2019t capture your unique edge',s:3},
+    {t:'They clearly communicate your specific expertise and value',s:4}
+  ]},
+  { dim:'execution', text:'When something career-related makes you uncomfortable (negotiations, difficult conversations, applications), you typically\u2026', opts:[
+    {t:'Avoid it entirely until it\u2019s no longer relevant',s:1},
+    {t:'Procrastinate until the last possible moment',s:2},
+    {t:'Push through with noticeable resistance',s:3},
+    {t:'Lean in \u2014 discomfort signals growth opportunity',s:4}
+  ]},
+  { dim:'network', text:'How many people in your broader industry could you message today to ask for honest career advice?', opts:[
+    {t:'Zero \u2014 you wouldn\u2019t know who to reach out to',s:1},
+    {t:'1\u20132 people, but you\u2019d feel awkward asking',s:2},
+    {t:'3\u20135 people who would happily help',s:3},
+    {t:'6+ people across different companies and seniority levels',s:4}
+  ]},
+  { dim:'innerGame', text:'When was the last time you felt genuinely proud of your professional work?', opts:[
+    {t:'You honestly can\u2019t remember',s:1},
+    {t:'Over six months ago',s:2},
+    {t:'Within the last few months',s:3},
+    {t:'Within the last few weeks',s:4}
+  ]},
+  { dim:'growth', text:'How often do you actively seek feedback on your work or career trajectory?', opts:[
+    {t:'Never \u2014 feedback makes you uncomfortable',s:1},
+    {t:'Only during formal performance reviews',s:2},
+    {t:'Occasionally from trusted colleagues',s:3},
+    {t:'Regularly, and from diverse sources including people who challenge you',s:4}
+  ]},
+  // ── Round 5 ──
+  { dim:'clarity', text:'How much of your career has been shaped by what others expect of you versus what you genuinely want?', opts:[
+    {t:'Almost entirely driven by external expectations',s:1},
+    {t:'Heavily influenced \u2014 you weigh others\u2019 opinions more than your own',s:2},
+    {t:'Balanced \u2014 you consider both but lean toward your own desires',s:3},
+    {t:'Mostly self-directed \u2014 you\u2019ve defined success on your own terms',s:4}
+  ]},
+  { dim:'market', text:'How often do opportunities come to you that you didn\u2019t actively seek out?', opts:[
+    {t:'Never \u2014 you have to fight for every opportunity',s:1},
+    {t:'Rarely \u2014 maybe once a year something comes along',s:2},
+    {t:'Occasionally \u2014 a few times a year',s:3},
+    {t:'Regularly \u2014 your reputation generates inbound interest',s:4}
+  ]},
+  { dim:'execution', text:'When an interesting opportunity appears unexpectedly, you usually\u2026', opts:[
+    {t:'Overthink it until the window closes',s:1},
+    {t:'Consider it but decide "it\u2019s not the right time"',s:2},
+    {t:'Explore it but sometimes move too slowly',s:3},
+    {t:'Evaluate quickly and act with conviction',s:4}
+  ]},
+  { dim:'network', text:'How often do you actively contribute to others\u2019 careers (mentoring, introductions, sharing knowledge)?', opts:[
+    {t:'Almost never',s:1},
+    {t:'Only when someone directly asks',s:2},
+    {t:'Occasionally \u2014 you try to give back when you can',s:3},
+    {t:'Regularly \u2014 generosity is part of your professional identity',s:4}
+  ]},
+  { dim:'innerGame', text:'If your closest friend described your current relationship with work, they\u2019d say\u2026', opts:[
+    {t:'"They seem burned out and running on empty"',s:1},
+    {t:'"They complain about work more than anything else"',s:2},
+    {t:'"They\u2019re going through the motions \u2014 fine but flat"',s:3},
+    {t:'"They seem purposeful and generally engaged"',s:4}
+  ]},
+  { dim:'growth', text:'If your entire role or industry became obsolete tomorrow, your confidence in reinventing yourself would be\u2026', opts:[
+    {t:'Very low \u2014 your identity is tied to this specific path',s:1},
+    {t:'Low \u2014 you\u2019d struggle to translate your experience',s:2},
+    {t:'Moderate \u2014 you have transferable skills you could leverage',s:3},
+    {t:'High \u2014 you\u2019re adaptable and your value transcends any single role',s:4}
+  ]},
+];
+
+// ── BOTTLENECK DESCRIPTIONS ──
+const BOTTLENECK = {
+  clarity: {
+    title: 'You\u2019re Running Fast on Someone Else\u2019s Track',
+    paras: [
+      'Your biggest bottleneck isn\u2019t skill, effort, or opportunity \u2014 it\u2019s that you haven\u2019t done the uncomfortable work of deciding what YOU actually want. You\u2019re optimizing for vague goals, which means every "win" feels hollow and every setback hits disproportionately hard because you can\u2019t tell whether it matters.',
+      'Most career advice tells you to work harder or network more. That\u2019s exactly wrong for you. Your next move is to stop, audit your values, and start making decisions that scare you slightly \u2014 because comfort in direction usually means you\u2019re following someone else\u2019s map. You don\u2019t need more options; you need the courage to eliminate them.'
+    ],
+    actions: [
+      'Block 2 hours this week with zero distractions. Write down 3 career paths that genuinely excite you \u2014 not what looks good, what feels like a pull. If nothing comes, that\u2019s data: you need more exploration, not more thinking.',
+      'Identify one decision you\u2019ve been deferring because "you\u2019re keeping options open." Commit to a direction for 90 days. You can change later, but chronic optionality is its own prison.',
+      'Find someone 5\u201310 years ahead of you on a path you admire. Ask them what they wish they\u2019d figured out earlier. Other people\u2019s clarity can catalyze your own.'
+    ]
+  },
+  market: {
+    title: 'You\u2019re the Industry\u2019s Best-Kept Secret',
+    paras: [
+      'You may be genuinely excellent at what you do, but the market doesn\u2019t know it. You\u2019ve confused "doing great work" with "being known for great work" \u2014 and these are completely different skills. While you\u2019ve been heads-down executing, others with half your ability have built visibility and are capturing the opportunities that should be yours.',
+      'This isn\u2019t about vanity or self-promotion. It\u2019s about the structural reality that opportunities flow through networks and reputation. Invisible competence has a ceiling, and you\u2019re hitting it. Your next move isn\u2019t to work harder \u2014 it\u2019s to become findable, recognizable, and known for something specific.'
+    ],
+    actions: [
+      'Rewrite your LinkedIn headline in under 12 words so a stranger immediately understands your specific value. Not your job title \u2014 the problem you solve or the outcome you create.',
+      'Publish or share one piece of professional insight this week \u2014 a post, a comment, a short article. The bar is lower than you think; the cost of silence is higher.',
+      'Research current market compensation for your role and experience level using at least 2 sources. If you\u2019re underpaid, this data becomes leverage. If you\u2019re on track, you\u2019ll stop wondering.'
+    ]
+  },
+  execution: {
+    title: 'You Know Exactly What To Do \u2014 And You\u2019re Not Doing It',
+    paras: [
+      'Your bottleneck isn\u2019t information, strategy, or opportunity. It\u2019s the gap between your intentions and your actions. You\u2019ve likely consumed enough career advice to write a book, purchased courses you never finished, and set goals on January 1st that were forgotten by February. The pattern is clear: great at planning, inconsistent at doing.',
+      'The uncomfortable truth: at some level, staying stuck feels safer than risking failure or rejection. Motion creates clarity, but you\u2019re waiting for clarity before you move. Your next step isn\u2019t another plan \u2014 it\u2019s doing the smallest uncomfortable thing today and building a streak. Momentum is a drug that only activates after the first step.'
+    ],
+    actions: [
+      'Identify the ONE career action you\u2019ve been avoiding most. Do a 15-minute version of it today \u2014 not the full thing, just the first step. Send the email, open the application, start the draft. Perfection isn\u2019t the goal; motion is.',
+      'Set a weekly "career hour" \u2014 a recurring calendar block dedicated to career-advancing work. Protect it like a meeting with your CEO. Track what you accomplish each week for a month.',
+      'Tell one person about your career goal this week. Social accountability outperforms willpower every time. Pick someone who will follow up, not someone who will just nod.'
+    ]
+  },
+  network: {
+    title: 'You\u2019re Building a Career in a Soundproof Room',
+    paras: [
+      'The opportunities you\u2019re missing aren\u2019t posted on job boards \u2014 they travel through human connections you don\u2019t have. Your skills may be strong, but nobody is mentioning your name in rooms where decisions are made. Career advancement is a team sport, and you\u2019re playing solo.',
+      'This isn\u2019t about fake networking or collecting LinkedIn connections. It\u2019s about the structural reality that careers accelerate through relationships: the mentor who pulls you into a project, the former colleague who refers you, the peer who warns you about a company before you accept. Without these, you\u2019re operating on hard mode without realizing the difficulty setting exists.'
+    ],
+    actions: [
+      'Message one person you\u2019ve lost touch with professionally \u2014 not to ask for anything, but to genuinely reconnect. "I saw [thing] and thought of you" is enough. Relationships compound, but only if they\u2019re active.',
+      'Attend one professional event (virtual or in-person) this month with the goal of having 2 real conversations. Not pitching yourself \u2014 being curious about others. The best networkers are the best listeners.',
+      'Identify your "manager relationship" honestly. If it\u2019s transactional or distant, schedule a 1:1 focused on your growth trajectory, not project status. Ask: "What would it take for me to be considered for [next opportunity]?"'
+    ]
+  },
+  innerGame: {
+    title: 'You\u2019re Running on Fumes and Calling It a Career Problem',
+    paras: [
+      'The issue isn\u2019t your job, your boss, or your industry \u2014 it\u2019s that you\u2019ve depleted your psychological reserves and now everything looks bleak through that lens. When you\u2019re burned out, every career decision looks like "I need to quit everything" when what you actually need might be rest, boundaries, or reconnection with what drew you to this work in the first place.',
+      'Burnout is a perception distortion engine. It makes tolerable situations feel unbearable and good options look impossible. Critical: do not make major career decisions in this state. The career itself may not need changing \u2014 your relationship to it does. Address the foundation before redesigning the house.'
+    ],
+    actions: [
+      'Conduct a ruthless audit of your boundaries this week. Where are you saying yes when you mean no? Identify one recurring energy drain you can eliminate or reduce. Boundaries aren\u2019t selfish; they\u2019re structural.',
+      'Schedule something genuinely restorative in the next 7 days \u2014 not productive, not optimizing, just replenishing. Your capacity to make good career decisions is directly proportional to your energy reserves.',
+      'Write down the last 3 moments you felt engaged at work. Look for the pattern \u2014 what conditions were present? This is your signal. The goal isn\u2019t to escape work; it\u2019s to engineer more of these conditions.'
+    ]
+  },
+  growth: {
+    title: 'Your Comfort Zone Has Become a Career Ceiling',
+    paras: [
+      'You\u2019ve found a comfortable groove, but that groove is becoming a rut. The skills and approach that got you here won\u2019t get you to the next level \u2014 they\u2019re actively holding you back as the market evolves around you. The dangerous part: nothing feels urgent. Your value is slowly depreciating while you feel perfectly safe.',
+      'This is the career equivalent of a slow leak \u2014 unnoticeable day-to-day, potentially catastrophic over years. The market rewards people who evolve. Not hyperactive skill-chasers, but professionals who systematically expand their capabilities and stay relevant. Learning feels optional when things are okay; by the time it feels urgent, you\u2019re already behind.'
+    ],
+    actions: [
+      'Identify the one skill or domain that would make you uncomfortable to learn but would dramatically increase your value. Commit to 30 minutes a day for 90 days. Consistency beats intensity for skill acquisition.',
+      'Ask 3 people you respect: "What\u2019s one capability that\u2019s becoming more valuable in our field that I should pay attention to?" The answers will reveal your blind spots faster than any research.',
+      'Do one thing this month that you\u2019ve never done professionally \u2014 give a talk, write publicly, mentor someone, contribute to an open-source project, take on a project outside your comfort zone. Novel experiences recalibrate your growth trajectory.'
+    ]
+  }
+};
+
+// ── STRENGTH DESCRIPTIONS ──
+const STRENGTHS = {
+  clarity: 'You have uncommon clarity about where you\u2019re headed. This is rarer than most people realize \u2014 a clear direction acts as a filter that makes every other career decision easier and faster.',
+  market: 'You\u2019ve built genuine market visibility and positioning. Opportunities find you instead of the other way around, which gives you leverage and optionality that most professionals lack.',
+  execution: 'You turn intentions into action consistently. While others plan endlessly, you ship, iterate, and build momentum. This execution muscle is arguably the single most valuable career trait.',
+  network: 'You\u2019ve cultivated real professional relationships and advocacy. People champion you in rooms you\u2019re not in, which unlocks opportunities that no amount of individual effort can replicate.',
+  innerGame: 'Your psychological foundation is solid. You handle setbacks with resilience and maintain a healthy relationship with your work. This inner stability is the platform everything else is built on.',
+  growth: 'You\u2019re a relentless learner who stays ahead of the curve. Your commitment to growth means your value compounds over time while others plateau \u2014 this is a massive long-term advantage.'
+};
+
+// ── COMPOUND PATTERNS ──
+const COMPOUNDS = [
+  { dims:['clarity','execution'], name:'Analysis Paralysis',
+    text:'You\u2019re stuck in a double bind: you can\u2019t act because you don\u2019t know what to act on, and you can\u2019t figure out what you want because you\u2019re not generating enough data through action. The fix isn\u2019t more thinking \u2014 it\u2019s small experiments. Try three different directions for two weeks each. Your clarity will emerge from motion, not meditation.' },
+  { dims:['market','network'], name:'Hidden Gem Syndrome',
+    text:'You\u2019re building an incredible career in a soundproof room with the blinds closed. Your skills may be exceptional, but zero leverage is being created because the people who could accelerate your career don\u2019t know you exist. This is the most common pattern in underpaid, under-promoted high performers. The world doesn\u2019t reward hidden talent \u2014 it rewards visible value.' },
+  { dims:['innerGame','clarity'], name:'Existential Career Crisis',
+    text:'You\u2019ve lost both your energy and your compass simultaneously, and each one makes the other worse. Burnout makes every option look bleak, and having no direction makes the burnout feel permanent. Critical: do not make major career decisions in this state. Address your energy and mental health first. Direction becomes remarkably clearer when you\u2019re not viewing everything through the lens of exhaustion.' },
+  { dims:['execution','growth'], name:'Comfortable Stagnation',
+    text:'You\u2019ve found a comfortable plateau and unconsciously decided to stay there. The work is fine, the pay is acceptable, and nothing is urgently wrong \u2014 which is precisely why this is so dangerous. You\u2019re slowly becoming less employable while feeling perfectly safe. This is the career equivalent of a slow leak: unnoticeable day-to-day, catastrophic over years.' },
+  { dims:['network','innerGame'], name:'Isolation Spiral',
+    text:'Professional loneliness and depleted resilience are feeding each other in a vicious cycle. When you\u2019re burned out, you withdraw from connections. When you\u2019re disconnected, every setback hits harder because you process it alone. Break this cycle with the smallest possible social action: one message, one coffee, one honest conversation with someone who gets it.' },
+  { dims:['clarity','market'], name:'Career Drift',
+    text:'You\u2019re floating in two dimensions at once \u2014 you don\u2019t know where you\u2019re going AND the market doesn\u2019t know who you are. This creates a dangerous illusion of flexibility ("I\u2019m keeping my options open") that\u2019s actually stagnation. You can\u2019t position yourself for opportunities when you don\u2019t know what you want, and opportunities can\u2019t find you when you\u2019re invisible.' },
+];
+
+// ── STATE ──
+let current = 0;
+let answers = new Array(QUESTIONS.length).fill(null);
+
+// ── NAVIGATION ──
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function startQuiz() {
+  current = 0;
+  answers.fill(null);
+  showScreen('quiz');
+  renderQuestion();
+}
+
+function renderQuestion() {
+  const q = QUESTIONS[current];
+  const container = document.getElementById('questionContainer');
+  const dim = DIM_META[q.dim];
+
+  document.getElementById('progressFill').style.width = ((current / QUESTIONS.length) * 100) + '%';
+  document.getElementById('counter').textContent = (current + 1) + ' / ' + QUESTIONS.length;
+  document.getElementById('backBtn').classList.toggle('hidden', current === 0);
+
+  let html = '<div class="question-slide"><div class="question-text">' + q.text + '</div><div class="options">';
+  q.opts.forEach((opt, i) => {
+    const sel = answers[current] === i ? ' selected' : '';
+    html += '<button class="option-btn' + sel + '" onclick="selectOption(' + i + ',' + opt.s + ')">' + opt.t + '</button>';
+  });
+  html += '</div></div>';
+  container.innerHTML = html;
+}
+
+function selectOption(index, score) {
+  answers[current] = index;
+  const btns = document.querySelectorAll('.option-btn');
+  btns.forEach((b, i) => {
+    b.classList.toggle('selected', i === index);
+    b.style.pointerEvents = 'none';
+  });
+
+  setTimeout(() => {
+    if (current < QUESTIONS.length - 1) {
+      current++;
+      renderQuestion();
+    } else {
+      showResults();
+    }
+  }, 500);
+}
+
+function prevQuestion() {
+  if (current > 0) { current--; renderQuestion(); }
+}
+
+// ── SCORING ──
+function calcScores() {
+  const totals = {}; const counts = {};
+  DIMS.forEach(d => { totals[d] = 0; counts[d] = 0; });
+  QUESTIONS.forEach((q, i) => {
+    if (answers[i] !== null) {
+      totals[q.dim] += q.opts[answers[i]].s;
+      counts[q.dim]++;
+    }
+  });
+  const scores = {};
+  DIMS.forEach(d => {
+    const avg = counts[d] ? totals[d] / counts[d] : 1;
+    scores[d] = Math.round(((avg - 1) / 3) * 100);
+  });
+  return scores;
+}
+
+// ── RADAR CHART (SVG) ──
+function buildRadar(scores) {
+  const cx = 200, cy = 200, R = 150;
+  const n = DIMS.length;
+  const angle = i => (Math.PI * 2 * i / n) - Math.PI / 2;
+  const px = (i, r) => cx + r * Math.cos(angle(i));
+  const py = (i, r) => cy + r * Math.sin(angle(i));
+
+  let svg = '<svg viewBox="0 0 400 400" class="radar-chart" xmlns="http://www.w3.org/2000/svg">';
+
+  // background rings
+  [0.25, 0.5, 0.75, 1].forEach(f => {
+    let pts = [];
+    for (let i = 0; i < n; i++) pts.push(px(i, R * f) + ',' + py(i, R * f));
+    svg += '<polygon points="' + pts.join(' ') + '" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>';
+  });
+
+  // axis lines
+  for (let i = 0; i < n; i++) {
+    svg += '<line x1="' + cx + '" y1="' + cy + '" x2="' + px(i, R) + '" y2="' + py(i, R) + '" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>';
+  }
+
+  // data polygon
+  let dataPts = [];
+  DIMS.forEach((d, i) => {
+    const r = R * Math.max(scores[d], 5) / 100;
+    dataPts.push(px(i, r) + ',' + py(i, r));
+  });
+  const perim = dataPts.join(' ');
+  svg += '<polygon points="' + perim + '" fill="rgba(212,160,60,0.12)" stroke="rgba(212,160,60,0.7)" stroke-width="2" style="animation: fillIn 1s ease 0.3s both;"/>';
+
+  // data points
+  DIMS.forEach((d, i) => {
+    const r = R * Math.max(scores[d], 5) / 100;
+    svg += '<circle cx="' + px(i, r) + '" cy="' + py(i, r) + '" r="4" fill="' + DIM_META[d].color + '" style="animation: fillIn 0.6s ease ' + (0.4 + i * 0.08) + 's both;"/>';
+  });
+
+  // labels
+  DIMS.forEach((d, i) => {
+    const lR = R + 28;
+    let lx = px(i, lR), ly = py(i, lR);
+    let anchor = 'middle';
+    if (Math.cos(angle(i)) > 0.3) anchor = 'start';
+    else if (Math.cos(angle(i)) < -0.3) anchor = 'end';
+    svg += '<text x="' + lx + '" y="' + ly + '" text-anchor="' + anchor + '" dominant-baseline="middle" fill="' + DIM_META[d].color + '" font-size="11" font-weight="600">' + DIM_META[d].short + '</text>';
+    svg += '<text x="' + lx + '" y="' + (ly + 15) + '" text-anchor="' + anchor + '" dominant-baseline="middle" fill="rgba(255,255,255,0.35)" font-size="10">' + scores[d] + '%</text>';
+  });
+
+  svg += '</svg>';
+  return svg;
+}
+
+// ── RESULTS ──
+function showResults() {
+  const scores = calcScores();
+  const overall = Math.round(DIMS.reduce((s, d) => s + scores[d], 0) / DIMS.length);
+
+  // sort dimensions by score
+  const sorted = [...DIMS].sort((a, b) => scores[a] - scores[b]);
+  const bottleneck = sorted[0];
+  const secondary = sorted[1];
+  const strength = sorted[sorted.length - 1];
+
+  const bn = BOTTLENECK[bottleneck];
+  const st = STRENGTHS[strength];
+
+  // compound pattern
+  let compound = null;
+  const THRESHOLD = 45;
+  for (const cp of COMPOUNDS) {
+    if (scores[cp.dims[0]] <= THRESHOLD && scores[cp.dims[1]] <= THRESHOLD) {
+      compound = cp;
+      break;
+    }
+  }
+
+  let html = '';
+
+  // header
+  html += '<div class="results-header">';
+  html += '<div class="badge">Diagnostic Complete</div>';
+  html += '<h2>Your Career Diagnostic Results</h2>';
+  html += '<p class="overall-score">Overall Career Health: <strong>' + overall + '%</strong></p>';
+  html += '</div>';
+
+  // radar chart
+  html += '<div class="chart-section">' + buildRadar(scores) + '</div>';
+
+  // score cards
+  html += '<div class="scores-grid">';
+  DIMS.forEach(d => {
+    const m = DIM_META[d];
+    const s = scores[d];
+    const isBottom = d === bottleneck;
+    html += '<div class="score-card">';
+    html += '<div class="label"><span class="dot" style="background:' + m.color + '"></span>' + m.name + '</div>';
+    html += '<div class="bar-track"><div class="bar-fill" data-width="' + s + '" style="background:' + m.color + ';"></div></div>';
+    html += '<div class="pct" style="color:' + (isBottom ? 'var(--coral)' : m.color) + '">' + s + '%' + (isBottom ? ' \u2014 Bottleneck' : '') + '</div>';
+    html += '</div>';
+  });
+  html += '</div>';
+
+  // bottleneck
+  html += '<div class="bottleneck-card">';
+  html += '<div class="overline">Your Primary Bottleneck \u2014 ' + DIM_META[bottleneck].name + '</div>';
+  html += '<h3>' + bn.title + '</h3>';
+  bn.paras.forEach(p => { html += '<p>' + p + '</p>'; });
+  html += '</div>';
+
+  // strength
+  html += '<div class="strength-card">';
+  html += '<div class="overline">Your Strongest Dimension \u2014 ' + DIM_META[strength].name + '</div>';
+  html += '<h3>Where You\u2019re Already Winning</h3>';
+  html += '<p>' + st + '</p>';
+  html += '</div>';
+
+  // compound
+  if (compound) {
+    html += '<div class="compound-card">';
+    html += '<div class="overline">Compound Pattern Detected</div>';
+    html += '<h3>' + compound.name + '</h3>';
+    html += '<p>' + compound.text + '</p>';
+    html += '</div>';
+  }
+
+  // actions
+  html += '<div class="actions-card">';
+  html += '<div class="overline">Your Next Moves</div>';
+  html += '<h3>Three Actions for the Next 30 Days</h3>';
+  html += '<ul class="actions-list">';
+  bn.actions.forEach((a, i) => {
+    html += '<li><span class="num">' + (i + 1) + '</span><span>' + a + '</span></li>';
+  });
+  html += '</ul></div>';
+
+  // footer
+  html += '<div class="results-footer"><button class="btn-restart" onclick="startQuiz()">Retake Diagnostic</button></div>';
+
+  document.getElementById('resultsContent').innerHTML = html;
+  showScreen('results');
+
+  // animate score bars after render
+  requestAnimationFrame(() => {
+    setTimeout(() => {
+      document.querySelectorAll('.bar-fill[data-width]').forEach(el => {
+        el.style.width = el.dataset.width + '%';
+      });
+    }, 300);
+  });
+}
+</script>
+</body>
+</html>
